@@ -1,0 +1,89 @@
+# 日志配置
+logging:
+  level:
+    org.springframework.web: INFO
+    me.chanjar.weixin: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+spring:
+  data:
+    redis:
+      repositories:
+        enabled: false
+  # 数据库配置
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    primary:
+      jdbc-url: jdbc:mysql://192.168.1.100:3306/test?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8
+      username: root
+      password: root123
+    # HikariCP数据连接池
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      auto-commit: true
+      idle-timeout: 10000
+      pool-name: DatebookHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: select 1
+  jpa:
+    database: mysql
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5Dialect
+    open-in-view: false
+
+  # Redis配置
+  redis:
+    database: 0
+    host: 192.168.1.100
+    port: 0000
+    password: xxxxxx
+    jedis:
+      pool:
+        max-active: 1024
+        max-wait: 10000
+        max-idle: 200
+        min-idle: 0
+    timeout: 10000
+
+wechat:
+  cp:
+    ents:
+      - ent_id: 0
+        # 石基大商
+        corpId: corpId0001
+        appConfigs:
+          - agentId: 1000006
+            secret: secretxxxxx1
+            token: xxx
+            aesKey: xxx
+      - ent_id: 1
+        # 国芳百货
+        corpId: corpId0002
+        appConfigs:
+          - agentId: 1000006
+            secret: secretxxxxx2
+            token: xxx
+            aesKey: xxx
+
+xxl:
+  job:
+    admin:
+      addresses: http://192.168.1.100/omp-job-admin
+    accessToken:
+    executor:
+      appname: cpwx-executor
+      address:
+      ip:
+      port: 9988
+      logpath: /logs/jobhandler
+      logretentiondays: 30
+
+efuture.agentId: '1_1000006'
