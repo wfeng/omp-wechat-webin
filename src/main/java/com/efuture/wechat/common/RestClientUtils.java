@@ -30,6 +30,9 @@ public class RestClientUtils {
     @Autowired
     private Environment env;
 
+    @Autowired
+    RestTemplate restTemplate;
+
     public static RestClientUtils getRestUtils() {
         return SpringBeanFactory.getBean("RestUtils", RestClientUtils.class);
     }
@@ -46,8 +49,6 @@ public class RestClientUtils {
     public class defaultRequestCallback implements requestCallback {
         @Override
         public Object onSend(String url, Object param) throws Exception {
-
-            RestTemplate restTemplate = new RestTemplate();
 
             HttpHeaders headers = new HttpHeaders();
             MediaType type = MediaType.APPLICATION_JSON;
