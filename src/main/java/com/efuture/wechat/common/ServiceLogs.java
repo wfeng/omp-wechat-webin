@@ -15,30 +15,18 @@ import java.util.Date;
 
 public class ServiceLogs {
 
-	public interface LOGTYPE {
-	    public String INFO = "info";
-		public String RESPONSE = "response";
-		public String REQUEST = "request";
-		public String DBSTART = "db_start";
-		public String DBEND = "db_end";
-		public String DBSUCC = "db_succ";
-		public String DBERROR = "db_error";
-		public String CALL_REQUEST = "call_request";
-		public String CALL_RESPONSE = "call_response";
-		public String MQSEND = "mq_send";
-		public String MQCONSUMER = "mq_consumer";
-		public String SMSSEND = "sms_send";
+	public static void logResponse(String logmsg, String rtncode) {
+		ServiceSession sessionobj = getSessionobj();
+		sessionobj.setReturncode(rtncode);
+		debuglog(sessionobj, LOGTYPE.RESPONSE, logmsg, sessionobj.getStarttime());
 	}
 
-//	static Logger logger = Logger.getLogger(ServiceLogs.class);
 	static Logger logger = LogManager.getLogger(ServiceLogs.class);
-
 
 
 	public static ServiceSession getSessionobj() {
 		ServiceSession sessionobj = ProductReflect.getLocale().get();
-		if (sessionobj == null || StringUtils.isEmpty(sessionobj.getRootkey()))
-		{
+		if (sessionobj == null || StringUtils.isEmpty(sessionobj.getRootkey())) {
 			String tname = Thread.currentThread().getName();
 			String rootkey = String.valueOf((new Date()).getTime());
 			if (tname.startsWith("rootkey")) {
@@ -54,54 +42,90 @@ public class ServiceLogs {
 		return sessionobj;
 	}
 
-	public static void logResponse(String logmsg, String rtncode) {
-		ServiceSession sessionobj = getSessionobj();
-		if (sessionobj != null) {
-			sessionobj.setReturncode(rtncode);
-			debuglog(sessionobj, LOGTYPE.RESPONSE, logmsg, sessionobj.getStarttime());
-		}
-	}
-
 	public static void logRequest(String logmsg) {
 		ServiceSession sessionobj = getSessionobj();
-		if (sessionobj != null) {
-			sessionobj.setStarttime(System.currentTimeMillis());
-			debuglog(sessionobj, LOGTYPE.REQUEST, logmsg, 0);
-		}
+		sessionobj.setStarttime(System.currentTimeMillis());
+		debuglog(sessionobj, LOGTYPE.REQUEST, logmsg, 0);
 	}
 
 	public static void logCallStart(String url, String method, String request) {
 		ServiceSession sessionobj = getSessionobj();
-		if (sessionobj != null) {
-			JSONObject logmsg = new JSONObject();
-			logmsg.put("call_method", method);
-			logmsg.put("call_url", url);
-			logmsg.put("call_request", request);
-			debuglog(sessionobj, LOGTYPE.CALL_REQUEST, logmsg.toString(), 0);
-		}
+		JSONObject logmsg = new JSONObject();
+		logmsg.put("call_method", method);
+		logmsg.put("call_url", url);
+		logmsg.put("call_request", request);
+		debuglog(sessionobj, LOGTYPE.CALL_REQUEST, logmsg.toString(), 0);
 	}
 
 	public static void logCallError(String url, String method, String errcode, String errmsg, long starttime) {
 		ServiceSession sessionobj = getSessionobj();
-		if (sessionobj != null) {
-			JSONObject logmsg = new JSONObject();
-			logmsg.put("call_method", method);
-			logmsg.put("call_url", url);
-			logmsg.put("call_returncode", errcode);
-			logmsg.put("call_response", errmsg);
-			debuglog(sessionobj, LOGTYPE.CALL_RESPONSE, logmsg.toString(), starttime);
-		}
+		JSONObject logmsg = new JSONObject();
+		logmsg.put("call_method", method);
+		logmsg.put("call_url", url);
+		logmsg.put("call_returncode", errcode);
+		logmsg.put("call_response", errmsg);
+		debuglog(sessionobj, LOGTYPE.CALL_RESPONSE, logmsg.toString(), starttime);
 	}
 
 	public static void logCallSuccess(String url, String method, long starttime) {
 		ServiceSession sessionobj = getSessionobj();
-		if (sessionobj != null) {
-			JSONObject logmsg = new JSONObject();
-			logmsg.put("call_method", method);
-			logmsg.put("call_url", url);
-			logmsg.put("call_returncode", "0");
-			debuglog(sessionobj, LOGTYPE.CALL_RESPONSE, logmsg.toString(), starttime);
+		JSONObject logmsg = new JSONObject();
+		logmsg.put("call_method", method);
+		logmsg.put("call_url", url);
+		logmsg.put("call_returncode", "0");
+		debuglog(sessionobj, LOGTYPE.CALL_RESPONSE, logmsg.toString(), starttime);
+	}
+
+	private static String getDefaultFormatstr(ServiceSession sessionobj, String logtype, final Exception e, String logmsg,
+											  long starttime) {
+		StringBuilder sb = new StringBuilder();
+		if (!StringUtils.isEmpty(sessionobj) && !StringUtils.isEmpty(sessionobj.getRootkey())) {
+			sb.append("rootkey: ");
+			sb.append(sessionobj.getRootkey().concat(", "));
 		}
+		sb.append("orderkey: ");
+		sb.append(sessionobj.getCurOrderKey().concat(", "));
+		if (logtype.equalsIgnoreCase(LOGTYPE.REQUEST)) {
+			sb.append("[").append(sessionobj.getRemoteaddr()).append(" - ").append(sessionobj.getLogkey()).append("]: ");
+			sb.append(sessionobj.getMethod()).append(" , ");
+			sb.append("REQUEST  : ");
+			sb.append(logmsg);
+			sb.append(" , entid : ");
+			sb.append(sessionobj.getEnt_id());
+		} else if (logtype.equalsIgnoreCase(LOGTYPE.RESPONSE)) {
+			sb.append("[").append(sessionobj.getRemoteaddr()).append(" - ").append(sessionobj.getLogkey()).append("]: ");
+			sb.append(sessionobj.getMethod()).append(" , ");
+			sb.append("ELAPSED  : ").append(System.currentTimeMillis() - starttime).append(" ms , ");
+			sb.append("RESPONSE : ");
+			sb.append(logmsg);
+		} else if (logtype.equalsIgnoreCase(LOGTYPE.INFO)) {
+			if (sessionobj.getRemoteaddr() != null && sessionobj.getLogkey() != null) {
+				sb.append("[").append(sessionobj.getRemoteaddr()).append(" - ").append(sessionobj.getLogkey()).append("]: ");
+			}
+			if (starttime > 0L) {
+				sb.append("ELAPSED  : ").append(System.currentTimeMillis() - starttime).append(" ms , ");
+			}
+			sb.append(logmsg);
+		} else {
+			sb.append(logtype).append("  : ");
+			if (starttime > 0L) {
+				sb.append("ELAPSED  : ").append(System.currentTimeMillis() - starttime).append(" ms , ");
+			}
+			sb.append(logmsg);
+		}
+		if (e != null) {
+			StackTraceElement[] stackTrace = e.getStackTrace();
+			for (int i = 0; i < stackTrace.length; i++) {
+				// System.out.println("key = " + stackTrace[i]);
+				if (i == 0) {
+					sb.append("exception : [").append(stackTrace[i]);
+				} else {
+					sb.append(stackTrace[i]);
+				}
+			}
+			sb.append("]");
+		}
+		return sb.toString();
 	}
 
 	public static void logConsumeMqStart(String topic, String key, String othermsg) {
@@ -197,67 +221,19 @@ public class ServiceLogs {
 		logmsg.put("mq_returncode", "0");
 		debuglog(sessionobj, LOGTYPE.MQSEND, logmsg.toString(), starttime);
 	}
-	
-	private static String getDefaultFormatstr(ServiceSession sessionobj, String logtype, final Exception e, String logmsg,
-			long starttime) {
-		StringBuffer sb = new StringBuffer();
-		if (!StringUtils.isEmpty(sessionobj) && !StringUtils.isEmpty(sessionobj.getRootkey()))
-		{
-			sb.append( "rootkey: " );
-			sb.append( sessionobj.getRootkey().concat( ", " ) );
+
+	public static String format(String msg, Object... args) {
+		if (args == null || args.length <= 0)
+			return msg;
+
+		// format String
+		for (int i = 0; i < args.length; i++) {
+			if (args[i] instanceof String)
+				continue;
+			args[i] = StringUtils.isEmpty(args[i]) ? "" : args[i].toString();
 		}
-		sb.append( "orderkey: " );
-		sb.append( sessionobj.getCurOrderKey().concat( ", " )  );
-		if (logtype.equalsIgnoreCase(LOGTYPE.REQUEST)) {
-			sb.append("[" + sessionobj.getRemoteaddr() + " - " + sessionobj.getLogkey() + "]: ");
-			sb.append(sessionobj.getMethod() + " , ");
-			sb.append("REQUEST  : ");
-			sb.append(logmsg);
-			sb.append(" , entid : ");
-			sb.append(sessionobj.getEnt_id());
-		} else if (logtype.equalsIgnoreCase(LOGTYPE.RESPONSE)) {
-			sb.append("[" + sessionobj.getRemoteaddr() + " - " + sessionobj.getLogkey() + "]: ");
-			sb.append(sessionobj.getMethod() + " , ");
-			sb.append("ELAPSED  : " + (System.currentTimeMillis() - starttime) + " ms , ");
-			sb.append("RESPONSE : ");
-			sb.append(logmsg);
-		} else if (logtype.equalsIgnoreCase(LOGTYPE.INFO)) {
-		    if (sessionobj.getRemoteaddr() != null && sessionobj.getLogkey() != null)
-		    {
-		        sb.append("[" + sessionobj.getRemoteaddr() + " - " + sessionobj.getLogkey() + "]: ");
-		    }
-            //sb.append(sessionobj.getMethod() + " , ");
-            if (starttime > 0L)
-            {
-                sb.append("ELAPSED  : " + (System.currentTimeMillis() - starttime) + " ms , ");
-            }
-            sb.append(logmsg);
-		} else {
-			//sb.append("[" + sessionobj.getRemoteaddr() + " - " + sessionobj.getLogkey() + "]: ");
-			//sb.append("[" + sessionobj.getRemoteaddr() + "]: ");
-			//sb.append(" [" + sessionobj.getMethod() + "] , ");
-			sb.append(logtype + "  : ");
-			if (starttime > 0L)
-			{
-				sb.append("ELAPSED  : " + (System.currentTimeMillis() - starttime) + " ms , ");
-			}
-			sb.append(logmsg);
-			//sb.append(" , url : ");
-			//sb.append(sessionobj.getUrl());
-		}
-		if (e != null) {
-			StackTraceElement[] stackTrace = e.getStackTrace();
-			for (int i = 0; i < stackTrace.length; i++) {
-				// System.out.println("key = " + stackTrace[i]);
-				if (i == 0) {
-					sb.append("exception : [" + stackTrace[i]);
-				} else {
-					sb.append(stackTrace[i]);
-				}
-			}
-			sb.append("]");
-		}
-		return sb.toString();
+
+		return MessageFormat.format(msg, args);
 	}
 
 
@@ -318,31 +294,27 @@ public class ServiceLogs {
 		logger.debug(msg);
 	}
 
-	public static String format(String msg, Object... args) {
-		if (args == null || args.length <= 0)
-			return msg;
-
-		// format String
-		for (int i = 0; args != null && i < args.length; i++) {
-			if (args[i] instanceof String)
-				continue;
-			args[i] = StringUtils.isEmpty(args[i]) ? "" : args[i].toString();
-		}
-
-		return MessageFormat.format(msg, args);
-	}
-
 	private static String formatMsg(String logtype, Exception e, String logmsg, long starttime, Object... arguments) {
 		ServiceSession sessionobj = getSessionobj();
-		String logFromat = "json";
 		String fmsg = format(logmsg, arguments);
-		String msg = fmsg;
-		if (logFromat.equalsIgnoreCase("json")) {
-			msg = getJsonFormatstr(sessionobj, logtype, e, fmsg, starttime);
-		} else {
-			msg = getDefaultFormatstr(sessionobj, logtype, e, fmsg, starttime);
-		}
+		String msg;
+		msg = getJsonFormatstr(sessionobj, logtype, e, fmsg, starttime);
 		return msg;
+	}
+
+	public interface LOGTYPE {
+		String INFO = "info";
+		String RESPONSE = "response";
+		String REQUEST = "request";
+		//		String DBSTART = "db_start";
+//		String DBEND = "db_end";
+//		String DBSUCC = "db_succ";
+//		String DBERROR = "db_error";
+		String CALL_REQUEST = "call_request";
+		String CALL_RESPONSE = "call_response";
+		String MQSEND = "mq_send";
+		String MQCONSUMER = "mq_consumer";
+		String SMSSEND = "sms_send";
 	}
 
 }
