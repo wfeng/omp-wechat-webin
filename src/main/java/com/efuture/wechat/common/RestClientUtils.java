@@ -48,17 +48,17 @@ public class RestClientUtils {
 
     public class defaultRequestCallback implements requestCallback {
         @Override
-        public Object onSend(String url, Object param) throws Exception {
+        public Object onSend(String url, Object param) {
 
             HttpHeaders headers = new HttpHeaders();
             MediaType type = MediaType.APPLICATION_JSON;
             headers.setContentType(type);
 
             if (param instanceof JSONObject) {
-                HttpEntity<JSONObject> formEntity = new HttpEntity<JSONObject>((JSONObject) param, headers);
+                HttpEntity<JSONObject> formEntity = new HttpEntity<>((JSONObject) param, headers);
                 return restTemplate.postForObject(url, formEntity, String.class);
             } else {
-                HttpEntity<String> formEntity = new HttpEntity<String>(param.toString(), headers);
+                HttpEntity<String> formEntity = new HttpEntity<>(param.toString(), headers);
                 return restTemplate.postForObject(url, formEntity, String.class);
             }
         }
@@ -71,11 +71,10 @@ public class RestClientUtils {
         if (result != null) {
             JSONObject json = JSON.parseObject((String) result);
             response = JSON.toJavaObject(json, ServiceResponse.class);
-                StringBuffer sb = new StringBuffer();
-                sb.append(method + " , ");
-                sb.append("RESPONSE: " + json.toJSONString() + " , ");
-                sb.append("SESSION:" + JSONObject.toJSONString(session));
-                logger.info(sb.toString());
+            String sb = method + " , " +
+                    "RESPONSE: " + json.toJSONString() + " , " +
+                    "SESSION:" + JSONObject.toJSONString(session);
+            logger.info(sb);
         }
         if (response == null)
             throw new ServiceException(ResponseCode.EXCEPTION, (String) result);
@@ -84,14 +83,14 @@ public class RestClientUtils {
     }
 
     protected Object sendRequest(Object session, String method, Object param, requestCallback callback) throws Exception {
-        String url = null;
+        String url;
         long start_time = 0;
         long borro_time = 0;
         // 转换参数
         ServiceSession ss = null;
-        if (session != null && session instanceof ServiceSession)
+        if (session instanceof ServiceSession)
             ss = (ServiceSession) session;
-        if (session != null && session instanceof Long) {
+        if (session instanceof Long) {
             ss = new ServiceSession();
             ss.setEnt_id((Long) session);
         }
@@ -115,7 +114,7 @@ public class RestClientUtils {
                 url = url.replace("{user_name}", ss.getUser_name());
             if (url.indexOf("{locale}") > 0 && ss != null)
                 url = url.replace("{locale}", ss.getLocale());
-            if (url.indexOf("{token}") > 0 && ss != null & ss.getToken() != null)
+            if (url.indexOf("{token}") > 0 && ss != null && ss.getToken() != null)
                 url = url.replace("{token}", ss.getToken());
 
             // 记录转发日志
@@ -125,21 +124,21 @@ public class RestClientUtils {
             // 转发
             return callback.onSend(url, param);
         } catch (Exception ex) {
-            StringBuffer sblog = new StringBuffer();
-            sblog.append("[" + ex.getMessage() + "]: ");
-            sblog.append(method + " , ");
-            sblog.append("ELAPSED: " + (System.currentTimeMillis() - start_time) + " ms , ");
-            sblog.append("BORROWS: " + (borro_time - start_time) + " ms , ");
+            StringBuilder sblog = new StringBuilder();
+            sblog.append("[").append(ex.getMessage()).append("]: ");
+            sblog.append(method).append(" , ");
+            sblog.append("ELAPSED: ").append(System.currentTimeMillis() - start_time).append(" ms , ");
+            sblog.append("BORROWS: ").append(borro_time - start_time).append(" ms , ");
             logger.info(sblog.toString());
             throw ex;
         } finally {
             // 记录转发日志
-                StringBuffer sb = new StringBuffer();
-                sb.append(method + " , ");
-                sb.append("ELAPSED: " + (System.currentTimeMillis() - start_time) + " ms , ");
-                sb.append("BORROWS: " + (borro_time - start_time) + " ms , ");
-                sb.append("REQUEST: " + param + " , ");
-                sb.append("SESSION:" + JSONObject.toJSONString(session));
+                StringBuilder sb = new StringBuilder();
+                sb.append(method).append(" , ");
+                sb.append("ELAPSED: ").append(System.currentTimeMillis() - start_time).append(" ms , ");
+                sb.append("BORROWS: ").append(borro_time - start_time).append(" ms , ");
+                sb.append("REQUEST: ").append(param).append(" , ");
+                sb.append("SESSION:").append(JSONObject.toJSONString(session));
                 logger.info(sb.toString());
         }
     }
