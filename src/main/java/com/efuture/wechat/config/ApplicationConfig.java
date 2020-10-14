@@ -40,8 +40,7 @@ public class ApplicationConfig {
 
     @Bean(name = "UniqueID")
     public UniqueID getUniqueID(){
-        UniqueID uniqueID = new UniqueID();
-        return uniqueID;
+        return new UniqueID();
     }
 
     @Bean(name = "ServiceMethodReflect")

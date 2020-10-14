@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * @title: RestTemplateConfiguration
- * @description: TODO
+ * @description: Rest连接配置类
  * @author: wangf
  * @date: 2020/10/10
  */

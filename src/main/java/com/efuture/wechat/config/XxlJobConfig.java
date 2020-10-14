@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @title: XxlJobConfig
- * @description: TODO
+ * @description: XXL-Job配置类
  * @author: wangf
  * @date: 2020/07/13
  */
