@@ -26,8 +26,7 @@ public class StaffinfoServiceImpl implements StaffinfoService {
 
     /**
      * 读取有效员工数据
-     * @param jsonparam
-     * @return
+     * @param jsonparam 查询参数
      */
     @Override
     public JSONObject queryStaffList(JSONObject jsonparam) {

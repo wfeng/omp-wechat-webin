@@ -38,7 +38,7 @@ public class StaffCustQywxRelationJobHandler extends IJobHandler {
     StaffinfoService staffinfoService;
 
     @Override
-    public ReturnT<String> execute(String param) throws Exception {
+    public ReturnT<String> execute(String param) {
         XxlJobLogger.log("开始同步员工客户企业微信关系数据");
         XxlJobLogger.log("企业配置:{}", agentId);
 
@@ -68,26 +68,25 @@ public class StaffCustQywxRelationJobHandler extends IJobHandler {
         JSONArray list = result.getJSONArray("list");
         XxlJobLogger.log("查询到{}个员工信息", total_results);
         XxlJobLogger.log("总分页数：{}", total_pages);
-        for (int i = 0; i < list.size(); i++) {
-            StaffinfoModel staffinfo = JSONObject.parseObject(list.getJSONObject(i).toJSONString(), StaffinfoModel.class);
-            XxlJobLogger.log("同步员工:{}的顾客关系", staffinfo.getName());
-            int cnt = staffCustQywxRelationService.syncStaffCustQywxRelation(staffinfo);
-            XxlJobLogger.log("完成员工:{}的顾客关系同步数量:{}", staffinfo.getName(), cnt);
-        }
+        syncCustQywxRelation(list);
         page_no++;
         for (; page_no <= total_pages; page_no++) {
             XxlJobLogger.log("查询第{}页数据", page_no);
             jsonparam.put("page_no", page_no);
             result = staffinfoService.queryStaffList(jsonparam);
             list = result.getJSONArray("list");
-            for (int i = 0; i < list.size(); i++) {
-                StaffinfoModel staffinfo = JSONObject.parseObject(list.getJSONObject(i).toJSONString(), StaffinfoModel.class);
-                XxlJobLogger.log("同步员工:{}的顾客关系", staffinfo.getName());
-                int cnt = staffCustQywxRelationService.syncStaffCustQywxRelation(staffinfo);
-                XxlJobLogger.log("完成员工:{}的顾客关系同步数量:{}", staffinfo.getName(), cnt);
-            }
+            syncCustQywxRelation(list);
         }
         XxlJobLogger.log("同步员工客户企业微信关系数据完成");
         return ReturnT.SUCCESS;
+    }
+
+    private void syncCustQywxRelation(JSONArray list) {
+        for (int i = 0; i < list.size(); i++) {
+            StaffinfoModel staffinfo = JSONObject.parseObject(list.getJSONObject(i).toJSONString(), StaffinfoModel.class);
+            XxlJobLogger.log("同步员工:{}的顾客关系", staffinfo.getName());
+            int cnt = staffCustQywxRelationService.syncStaffCustQywxRelation(staffinfo);
+            XxlJobLogger.log("完成员工:{}的顾客关系同步数量:{}", staffinfo.getName(), cnt);
+        }
     }
 }

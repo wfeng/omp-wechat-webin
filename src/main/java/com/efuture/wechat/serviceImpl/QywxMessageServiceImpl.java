@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Service
 public class QywxMessageServiceImpl implements QywxMessageService {
-    private EmojiConverter emojiConverter = EmojiConverter.getInstance();
+    private final EmojiConverter emojiConverter = EmojiConverter.getInstance();
     @Autowired
     QywxMessageLogRepository qywxMessageLogRepository;
     @Override
@@ -55,7 +55,6 @@ public class QywxMessageServiceImpl implements QywxMessageService {
 
     @Override
     public List<String> getMsgIdsByStatus(ServiceSession session, String status) {
-        List<String> msgIds = qywxMessageLogRepository.getMsgIdByStatus(session.getEnt_id(), status);
-        return msgIds;
+        return qywxMessageLogRepository.getMsgIdByStatus(session.getEnt_id(), status);
     }
 }
