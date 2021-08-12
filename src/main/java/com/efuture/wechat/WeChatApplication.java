@@ -1,7 +1,7 @@
 package com.efuture.wechat;
 
 import com.efuture.wechat.common.SpringContext;
-import groovy.util.logging.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @Slf4j
